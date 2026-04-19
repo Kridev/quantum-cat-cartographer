@@ -187,23 +187,23 @@
     filter: drop-shadow(0 0 6px var(--accent));
   }
   .cat.selected::before {
-    content: 'move';
+    content: attr(data-dest);
     position: absolute;
     left: 50%;
     bottom: calc(100% + 7px);
     transform: translateX(-50%);
     background: var(--accent);
     color: var(--bg);
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 6px;
+    letter-spacing: 0.5px;
+    padding: 3px 7px;
+    border-radius: 8px;
     white-space: nowrap;
     pointer-events: none;
     box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     animation: balloon-bob 0.9s ease-in-out infinite;
+    z-index: 20;
   }
   .cat.selected::after {
     content: '';
@@ -796,9 +796,11 @@ function appendCatTo(nodeId, cat) {
   const span = document.createElement('span');
   span.className = 'cat';
   span.textContent = cat.glyph;
+  const wantNode = state.nodes[cat.want];
   span.title = cat.schrod
-    ? `Schrödinger cat — wants ${state.nodes[cat.want].name}`
-    : `Cat — wants ${state.nodes[cat.want].name}`;
+    ? `Schrödinger cat — wants ${wantNode.name}`
+    : `Cat — wants ${wantNode.name}`;
+  span.dataset.dest = `→ ${wantNode.icon} ${wantNode.name}`;
   if (cat.schrod) span.classList.add('schrod');
   if (cat.id === state.selectedCat) span.classList.add('selected');
   span.addEventListener('click', (ev) => {
