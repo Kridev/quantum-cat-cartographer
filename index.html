@@ -167,9 +167,6 @@
     animation: pulse 0.8s infinite;
     filter: drop-shadow(0 0 6px var(--accent));
   }
-  .cat.happy {
-    filter: drop-shadow(0 0 4px var(--good));
-  }
   .cat.schrod {
     opacity: 0.55;
     animation: phase 2s infinite ease-in-out;
@@ -460,7 +457,7 @@
     </div>
 
     <div class="legend">
-      <span style="color:#68d391">⬤ matched (happy)</span>
+      <span style="color:#68d391">⬤ correctly placed (vanishes)</span>
       <span style="color:#b794f6">⬤ superposition</span>
       <span style="color:#fc8181">⬤ overloaded</span>
     </div>
@@ -693,7 +690,6 @@ function appendCatTo(nodeId, cat) {
     : `Cat — wants ${state.nodes[cat.want].name}`;
   if (cat.schrod) span.classList.add('schrod');
   if (cat.id === state.selectedCat) span.classList.add('selected');
-  if (!cat.schrod && cat.node === cat.want) span.classList.add('happy');
   span.addEventListener('click', (ev) => {
     ev.stopPropagation();
     onCatClick(cat.id, nodeId);
@@ -763,11 +759,9 @@ function onNodeClick(nodeId) {
   cat.node = nodeId;
   state.selectedCat = null;
   if (cat.node === cat.want) {
-    floater(`+10 happy`, 'var(--good)', nodeId);
+    floater(`+10 placed`, 'var(--good)', nodeId);
     state.score += 10;
-    cat.placed = true;
-  } else {
-    cat.placed = false;
+    state.cats = state.cats.filter(c => c.id !== cat.id);
   }
   renderCats();
   updateHud();
