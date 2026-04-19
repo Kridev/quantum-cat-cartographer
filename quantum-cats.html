@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quantum Cat Cartographer</title>
+<style>
+  :root {
+    --bg: #0a0a14;
+    --bg2: #14142a;
+    --ink: #e8e8f0;
+    --dim: #8a8aa8;
+    --accent: #b794f6;
+    --good: #68d391;
+    --bad: #fc8181;
+    --warn: #f6ad55;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: radial-gradient(ellipse at center, var(--bg2) 0%, var(--bg) 100%);
+    color: var(--ink);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+  #hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+    background: linear-gradient(to bottom, rgba(10,10,20,0.85), transparent);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 110px;
+  }
+  .stat label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--dim);
+  }
+  .stat .val {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .bar {
+    width: 180px;
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--good), var(--warn), var(--bad));
+    transition: width 0.3s;
+    width: 100%;
+  }
+  #title {
+    text-align: center;
+    flex: 1;
+  }
+  #title h1 {
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  #title .sub {
+    font-size: 11px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+  svg.links {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(20, 20, 40, 0.7);
+    border: 2px solid var(--node-color, #444);
+    box-shadow: 0 0 30px var(--node-glow, rgba(100,100,200,0.2)) inset,
+                0 0 20px var(--node-glow, rgba(100,100,200,0.15));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    backdrop-filter: blur(4px);
+  }
+  .node:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  .node.target {
+    box-shadow: 0 0 40px var(--node-color, #fff),
+                0 0 20px var(--node-color, #fff) inset;
+  }
+  .node.overloaded {
+    animation: shake 0.4s infinite;
+    border-color: var(--bad);
+  }
+  @keyframes shake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    25% { transform: translate(calc(-50% + 2px), calc(-50% - 1px)); }
+    75% { transform: translate(calc(-50% - 2px), calc(-50% + 1px)); }
+  }
+  .node .icon {
+    font-size: 32px;
+    margin-bottom: 2px;
+  }
+  .node .name {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+    opacity: 0.85;
+  }
+  .node .cap {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+  .cats {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
+    width: 130px;
+    pointer-events: none;
+  }
+  .cat {
+    font-size: 18px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: transform 0.15s;
+    text-shadow: 0 0 6px rgba(0,0,0,0.8);
+    line-height: 1;
+  }
+  .cat:hover { transform: scale(1.4); }
+  .cat.selected {
+    animation: pulse 0.8s infinite;
+    filter: drop-shadow(0 0 6px var(--accent));
+  }
+  .cat.happy {
+    filter: drop-shadow(0 0 4px var(--good));
+  }
+  .cat.schrod {
+    opacity: 0.55;
+    animation: phase 2s infinite ease-in-out;
+    filter: drop-shadow(0 0 6px var(--accent));
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1.2); }
+    50% { transform: scale(1.4); }
+  }
+  @keyframes phase {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.85; }
+  }
+  #footer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 20px;
+    text-align: center;
+    color: var(--dim);
+    font-size: 12px;
+    background: linear-gradient(to top, rgba(10,10,20,0.85), transparent);
+    z-index: 10;
+  }
+  #footer kbd {
+    background: rgba(255,255,255,0.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    color: var(--ink);
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,20,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    text-align: center;
+    padding: 20px;
+  }
+  #overlay h2 {
+    font-size: 36px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    letter-spacing: 4px;
+  }
+  #overlay p {
+    color: var(--dim);
+    max-width: 580px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  #overlay .panel {
+    max-width: 640px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(183,148,246,0.2);
+    border-radius: 6px;
+    padding: 16px 22px;
+    margin-bottom: 14px;
+    text-align: left;
+  }
+  #overlay .panel h3 {
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  #overlay .panel ul {
+    list-style: none;
+    padding: 0;
+  }
+  #overlay .panel li {
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.7;
+    padding-left: 16px;
+    position: relative;
+  }
+  #overlay .panel li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  #overlay .panel strong { color: var(--accent); font-weight: 600; }
+  #overlay .panel em { color: var(--good); font-style: normal; }
+  #overlay button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 12px 32px;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.15s;
+  }
+  #overlay button:hover { transform: scale(1.05); }
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--dim);
+  }
+  .floater {
+    position: absolute;
+    pointer-events: none;
+    font-size: 14px;
+    font-weight: 600;
+    animation: float 1.4s ease-out forwards;
+    z-index: 50;
+  }
+  @keyframes float {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-40px); }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="hud">
+    <div class="stat">
+      <label>Score</label>
+      <div class="val" id="score">0</div>
+    </div>
+    <div id="title">
+      <h1>Quantum Cat Cartographer</h1>
+      <div class="sub">Wave <span id="wave">1</span> · Cats observed: <span id="observed">0</span></div>
+    </div>
+    <div class="stat" style="align-items:flex-end">
+      <label>Reality Stability</label>
+      <div class="val" id="stab">100%</div>
+      <div class="bar"><div id="stabBar"></div></div>
+    </div>
+  </div>
+
+  <svg class="links" id="links"></svg>
+  <div id="nodes"></div>
+
+  <div id="footer">
+    <kbd>Click</kbd> a cat to select · <kbd>Click</kbd> a connected node to move it · <kbd>Click</kbd> a faded
+    Schrödinger cat to observe (collapse its waveform)
+  </div>
+
+  <div id="overlay">
+    <h2>QUANTUM CAT CARTOGRAPHER</h2>
+    <p>
+      Six realities. Cats drift in. Each cat has a hidden preferred reality
+      (matching its node's color). Place them right, keep stability above zero,
+      survive escalating waves.
+    </p>
+
+    <div class="panel">
+      <h3>Controls</h3>
+      <ul>
+        <li><strong>Click a solid cat</strong> to select it — connected nodes light up</li>
+        <li><strong>Click a glowing node</strong> to move it (only adjacent nodes are reachable)</li>
+        <li><strong>Click a faded Schrödinger cat</strong> to observe it — collapses to that node</li>
+        <li><strong>Esc</strong> deselects</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3>Schrödinger cats</h3>
+      <ul>
+        <li>Appear faded and pulsing on <em>2–3 nodes simultaneously</em> — same cat, multiple places</li>
+        <li>Don't count toward node capacity until observed</li>
+        <li>Clicking one of its copies collapses the waveform — it becomes solid at the node you clicked</li>
+        <li>You choose the collapse location: pick wisely (near its preferred reality)</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3>Scoring &amp; stability</h3>
+      <ul>
+        <li><strong>+5</strong> for observing a Schrödinger cat</li>
+        <li><strong>+10</strong> when you place a cat in its preferred reality</li>
+        <li><strong>+1/sec</strong> per cat you've placed correctly (passive)</li>
+        <li>Each node has a capacity. Exceeding it drains stability (−2/sec per excess cat)</li>
+        <li>Stability slowly regenerates when no node is overloaded</li>
+        <li>Stability hits 0 → reality collapses → game over</li>
+      </ul>
+    </div>
+
+    <div class="legend">
+      <span style="color:#68d391">⬤ matched (happy)</span>
+      <span style="color:#b794f6">⬤ superposition</span>
+      <span style="color:#fc8181">⬤ overloaded</span>
+    </div>
+
+    <p style="margin-top:20px"><button id="start">BEGIN OBSERVATION</button></p>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const REALITIES = [
+  { id:'garden',  name:'Garden',  icon:'🌳', color:'#68d391', cap:4 },
+  { id:'box',     name:'Box',     icon:'📦', color:'#f6ad55', cap:3 },
+  { id:'void',    name:'Void',    icon:'🌌', color:'#9f7aea', cap:5 },
+  { id:'lab',     name:'Lab',     icon:'🔬', color:'#63b3ed', cap:3 },
+  { id:'library', name:'Library', icon:'📚', color:'#ed8936', cap:4 },
+  { id:'kitchen', name:'Kitchen', icon:'🐟', color:'#fc8181', cap:3 },
+];
+
+const EDGES = [
+  ['garden','box'], ['box','void'], ['void','lab'], ['lab','library'],
+  ['library','kitchen'], ['kitchen','garden'],
+  ['garden','void'], ['box','library'], ['lab','kitchen'],
+];
+
+const CAT_GLYPHS = ['🐈','🐈‍⬛','😺','😼','😸','🙀'];
+
+const state = {
+  cats: [],
+  nodes: {},
+  selectedCat: null,
+  score: 0,
+  observed: 0,
+  stability: 100,
+  wave: 1,
+  spawnTimer: 0,
+  scoreTimer: 0,
+  waveTimer: 0,
+  running: false,
+  nextId: 1,
+};
+
+function rand(n) { return Math.floor(Math.random() * n); }
+function pick(arr) { return arr[rand(arr.length)]; }
+
+function neighborsOf(id) {
+  const out = new Set();
+  for (const [a,b] of EDGES) {
+    if (a === id) out.add(b);
+    if (b === id) out.add(a);
+  }
+  return [...out];
+}
+
+function layoutNodes() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const cx = w / 2, cy = h / 2;
+  const r = Math.min(w, h) * 0.32;
+  REALITIES.forEach((r0, i) => {
+    const angle = (i / REALITIES.length) * Math.PI * 2 - Math.PI / 2;
+    state.nodes[r0.id] = {
+      ...r0,
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+    };
+  });
+}
+
+function renderLinks() {
+  const svg = document.getElementById('links');
+  svg.innerHTML = '';
+  for (const [a,b] of EDGES) {
+    const na = state.nodes[a], nb = state.nodes[b];
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', na.x);
+    line.setAttribute('y1', na.y);
+    line.setAttribute('x2', nb.x);
+    line.setAttribute('y2', nb.y);
+    line.setAttribute('stroke', 'rgba(150,150,200,0.18)');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-dasharray', '4 4');
+    svg.appendChild(line);
+  }
+}
+
+function renderNodes() {
+  const root = document.getElementById('nodes');
+  root.innerHTML = '';
+  for (const id in state.nodes) {
+    const n = state.nodes[id];
+    const div = document.createElement('div');
+    div.className = 'node';
+    div.dataset.id = id;
+    div.style.left = n.x + 'px';
+    div.style.top = n.y + 'px';
+    div.style.setProperty('--node-color', n.color);
+    div.style.setProperty('--node-glow', n.color + '55');
+    const count = catsAt(id).length;
+    if (count > n.cap) div.classList.add('overloaded');
+    div.innerHTML = `
+      <div class="icon">${n.icon}</div>
+      <div class="name">${n.name}</div>
+      <div class="cap">${count} / ${n.cap}</div>
+      <div class="cats" data-id="${id}"></div>
+    `;
+    div.addEventListener('click', (e) => {
+      if (e.target.classList.contains('cat')) return;
+      onNodeClick(id);
+    });
+    root.appendChild(div);
+  }
+  renderCats();
+}
+
+function catsAt(nodeId) {
+  return state.cats.filter(c => !c.schrod && c.node === nodeId);
+}
+
+function renderCats() {
+  document.querySelectorAll('.cats').forEach(el => el.innerHTML = '');
+  for (const cat of state.cats) {
+    if (cat.schrod) {
+      for (const nid of cat.nodes) {
+        appendCatTo(nid, cat);
+      }
+    } else {
+      appendCatTo(cat.node, cat);
+    }
+  }
+  document.querySelectorAll('.node').forEach(n => {
+    const id = n.dataset.id;
+    const node = state.nodes[id];
+    const count = catsAt(id).length;
+    n.querySelector('.cap').textContent = `${count} / ${node.cap}`;
+    n.classList.toggle('overloaded', count > node.cap);
+    if (state.selectedCat) {
+      const sel = state.cats.find(c => c.id === state.selectedCat);
+      if (sel && !sel.schrod && neighborsOf(sel.node).includes(id)) {
+        n.classList.add('target');
+      } else {
+        n.classList.remove('target');
+      }
+    } else {
+      n.classList.remove('target');
+    }
+  });
+}
+
+function appendCatTo(nodeId, cat) {
+  const container = document.querySelector(`.cats[data-id="${nodeId}"]`);
+  if (!container) return;
+  const span = document.createElement('span');
+  span.className = 'cat';
+  span.textContent = cat.glyph;
+  span.title = cat.schrod
+    ? `Schrödinger cat — wants ${state.nodes[cat.want].name}`
+    : `Cat — wants ${state.nodes[cat.want].name}`;
+  if (cat.schrod) span.classList.add('schrod');
+  if (cat.id === state.selectedCat) span.classList.add('selected');
+  if (!cat.schrod && cat.node === cat.want) span.classList.add('happy');
+  span.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    onCatClick(cat.id, nodeId);
+  });
+  container.appendChild(span);
+}
+
+function spawnCat(forceSchrod) {
+  const want = pick(REALITIES).id;
+  const isSchrod = forceSchrod || (Math.random() < Math.min(0.15 + state.wave * 0.05, 0.55));
+  if (isSchrod) {
+    const all = REALITIES.map(r => r.id);
+    const count = 2 + (Math.random() < 0.3 ? 1 : 0);
+    const nodes = [];
+    while (nodes.length < count) {
+      const c = pick(all);
+      if (!nodes.includes(c)) nodes.push(c);
+    }
+    state.cats.push({
+      id: state.nextId++,
+      glyph: pick(CAT_GLYPHS),
+      schrod: true,
+      nodes,
+      want,
+    });
+  } else {
+    const others = REALITIES.filter(r => r.id !== want);
+    state.cats.push({
+      id: state.nextId++,
+      glyph: pick(CAT_GLYPHS),
+      schrod: false,
+      node: pick(others).id,
+      want,
+      placed: false,
+    });
+  }
+}
+
+function onCatClick(catId, observedAt) {
+  const cat = state.cats.find(c => c.id === catId);
+  if (!cat) return;
+  if (cat.schrod) {
+    cat.schrod = false;
+    cat.node = observedAt;
+    cat.placed = false;
+    delete cat.nodes;
+    state.observed++;
+    floater(`+5 observed`, 'var(--accent)', observedAt);
+    state.score += 5;
+    state.selectedCat = cat.id;
+  } else {
+    state.selectedCat = (state.selectedCat === cat.id) ? null : cat.id;
+  }
+  renderCats();
+  updateHud();
+}
+
+function onNodeClick(nodeId) {
+  if (!state.selectedCat) return;
+  const cat = state.cats.find(c => c.id === state.selectedCat);
+  if (!cat || cat.schrod) { state.selectedCat = null; renderCats(); return; }
+  if (cat.node === nodeId) { state.selectedCat = null; renderCats(); return; }
+  if (!neighborsOf(cat.node).includes(nodeId)) {
+    floater(`× no link`, 'var(--bad)', nodeId);
+    return;
+  }
+  cat.node = nodeId;
+  state.selectedCat = null;
+  if (cat.node === cat.want) {
+    floater(`+10 happy`, 'var(--good)', nodeId);
+    state.score += 10;
+    cat.placed = true;
+  } else {
+    cat.placed = false;
+  }
+  renderCats();
+  updateHud();
+}
+
+function floater(text, color, nodeId) {
+  const n = state.nodes[nodeId];
+  const el = document.createElement('div');
+  el.className = 'floater';
+  el.textContent = text;
+  el.style.color = color;
+  el.style.left = (n.x - 30) + 'px';
+  el.style.top = (n.y - 60) + 'px';
+  document.getElementById('game').appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+}
+
+function tick(dt) {
+  state.spawnTimer += dt;
+  state.scoreTimer += dt;
+  state.waveTimer += dt;
+
+  const spawnInterval = Math.max(1.4, 4.0 - state.wave * 0.25);
+  let dirty = false;
+  if (state.spawnTimer > spawnInterval) {
+    state.spawnTimer = 0;
+    spawnCat();
+    dirty = true;
+  }
+
+  if (state.scoreTimer > 1.0) {
+    state.scoreTimer = 0;
+    let happy = 0, overload = 0;
+    for (const cat of state.cats) {
+      if (!cat.schrod && cat.placed && cat.node === cat.want) happy++;
+    }
+    for (const id in state.nodes) {
+      const n = state.nodes[id];
+      const c = catsAt(id).length;
+      if (c > n.cap) overload += (c - n.cap);
+    }
+    state.score += happy;
+    state.stability = Math.max(0, Math.min(100, state.stability - overload * 2 + (overload === 0 ? 0.5 : 0)));
+    if (state.stability <= 0) gameOver();
+  }
+
+  if (state.waveTimer > 25) {
+    state.waveTimer = 0;
+    state.wave++;
+    floater(`WAVE ${state.wave}`, 'var(--accent)', pick(REALITIES).id);
+    for (let i = 0; i < state.wave; i++) spawnCat(Math.random() < 0.4);
+    dirty = true;
+  }
+
+  updateHud();
+  if (dirty) renderCats();
+}
+
+function updateHud() {
+  document.getElementById('score').textContent = Math.floor(state.score);
+  document.getElementById('observed').textContent = state.observed;
+  document.getElementById('wave').textContent = state.wave;
+  document.getElementById('stab').textContent = Math.floor(state.stability) + '%';
+  document.getElementById('stabBar').style.width = state.stability + '%';
+}
+
+function gameOver() {
+  state.running = false;
+  const overlay = document.getElementById('overlay');
+  overlay.style.display = 'flex';
+  overlay.innerHTML = `
+    <h2>REALITY COLLAPSED</h2>
+    <p>The fabric of spacetime could no longer support your cat distribution.</p>
+    <p style="font-size:32px;color:var(--accent);margin:20px 0">${Math.floor(state.score)} points</p>
+    <p>${state.observed} cats observed across ${state.wave} waves.</p>
+    <p style="margin-top:20px"><button onclick="location.reload()">OBSERVE AGAIN</button></p>
+  `;
+}
+
+function start() {
+  document.getElementById('overlay').style.display = 'none';
+  state.running = true;
+  for (let i = 0; i < 3; i++) spawnCat();
+  spawnCat(true);
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    if (state.running) tick(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', () => {
+  layoutNodes();
+  renderLinks();
+  renderNodes();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    state.selectedCat = null;
+    renderCats();
+  }
+});
+
+layoutNodes();
+renderLinks();
+renderNodes();
+document.getElementById('start').addEventListener('click', start);
+</script>
+</body>
+</html>
