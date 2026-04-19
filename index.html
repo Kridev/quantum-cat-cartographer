@@ -620,11 +620,32 @@ function renderLinks() {
     line.setAttribute('y1', na.y);
     line.setAttribute('x2', nb.x);
     line.setAttribute('y2', nb.y);
-    line.setAttribute('stroke', 'rgba(150,150,200,0.18)');
-    line.setAttribute('stroke-width', '1.5');
-    line.setAttribute('stroke-dasharray', '4 4');
+    line.setAttribute('data-a', a);
+    line.setAttribute('data-b', b);
     svg.appendChild(line);
   }
+  paintLinks();
+}
+
+function paintLinks() {
+  const sel = state.selectedCat ? state.cats.find(c => c.id === state.selectedCat) : null;
+  const from = (sel && !sel.schrod) ? sel.node : null;
+  document.querySelectorAll('#links line').forEach(line => {
+    const a = line.getAttribute('data-a');
+    const b = line.getAttribute('data-b');
+    const active = from && (a === from || b === from);
+    if (active) {
+      line.setAttribute('stroke', '#b794f6');
+      line.setAttribute('stroke-width', '2.5');
+      line.setAttribute('stroke-dasharray', '');
+      line.setAttribute('opacity', '0.85');
+    } else {
+      line.setAttribute('stroke', 'rgba(150,150,200,0.22)');
+      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('stroke-dasharray', '4 4');
+      line.setAttribute('opacity', '1');
+    }
+  });
 }
 
 function renderNodes() {
@@ -688,6 +709,7 @@ function renderCats() {
       n.classList.remove('target');
     }
   });
+  paintLinks();
 }
 
 function appendCatTo(nodeId, cat) {
