@@ -274,6 +274,98 @@
     transition: transform 0.15s;
   }
   #overlay button:hover { transform: scale(1.05); }
+  #overlay input[type="text"] {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(183,148,246,0.4);
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-align: center;
+    width: 240px;
+    margin-right: 8px;
+    font-family: inherit;
+  }
+  #overlay input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.1);
+  }
+  #leaderboard {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    width: 280px;
+    background: rgba(20, 20, 40, 0.85);
+    border: 1px solid rgba(183,148,246,0.3);
+    border-radius: 6px;
+    padding: 14px 18px;
+    text-align: left;
+  }
+  #leaderboard h3 {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-align: center;
+  }
+  #leaderboard ol {
+    list-style: none;
+    padding: 0;
+    counter-reset: rank;
+  }
+  #leaderboard li {
+    counter-increment: rank;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    font-size: 12px;
+    border-bottom: 1px dashed rgba(255,255,255,0.05);
+  }
+  #leaderboard li:last-child { border-bottom: none; }
+  #leaderboard li::before {
+    content: counter(rank);
+    color: var(--dim);
+    width: 22px;
+    text-align: right;
+    margin-right: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  #leaderboard .lb-name {
+    color: var(--ink);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #leaderboard .lb-score {
+    color: var(--good);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #leaderboard .lb-empty {
+    color: var(--dim);
+    font-size: 11px;
+    text-align: center;
+    padding: 12px 0;
+    font-style: italic;
+  }
+  #leaderboard .lb-foot {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--dim);
+  }
+  #leaderboard a {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  #leaderboard a:hover { text-decoration: underline; }
   .legend {
     display: flex;
     gap: 16px;
@@ -373,7 +465,16 @@
       <span style="color:#fc8181">⬤ overloaded</span>
     </div>
 
-    <p style="margin-top:20px"><button id="start">BEGIN OBSERVATION</button></p>
+    <p style="margin-top:20px">
+      <input type="text" id="playerName" maxlength="16" placeholder="YOUR NAME" autocomplete="off">
+      <button id="start">BEGIN OBSERVATION</button>
+    </p>
+
+    <div id="leaderboard">
+      <h3>Top 10 Observers</h3>
+      <ol id="lbList"><li class="lb-empty">loading…</li></ol>
+      <div class="lb-foot" id="lbFoot"></div>
+    </div>
   </div>
 </div>
 
@@ -397,6 +498,70 @@ const EDGES = [
 
 const CAT_GLYPHS = ['🐈','🐈‍⬛','😺','😼','😸','🙀'];
 
+// === Dreamlo leaderboard config ===
+// 1. Visit https://dreamlo.com/  → "Get your own free leaderboard"
+// 2. Copy the PUBLIC code (read) and PRIVATE code (write) from the URLs they give you
+// 3. Paste them below
+const DREAMLO_PUBLIC_CODE  = '69e482be8f40bb106839bd99';
+const DREAMLO_PRIVATE_CODE = 'rWFXzszzPECK5A_5SgVbhQOhyAb2oidkiVgGxVjg8Fkg';
+const DREAMLO_BASE = 'https://www.dreamlo.com/lb';
+
+async function fetchLeaderboard() {
+  if (!DREAMLO_PUBLIC_CODE) return null;
+  try {
+    const r = await fetch(`${DREAMLO_BASE}/${DREAMLO_PUBLIC_CODE}/json/10`);
+    const j = await r.json();
+    const lb = j && j.dreamlo && j.dreamlo.leaderboard;
+    if (!lb || !lb.entry) return [];
+    const entries = Array.isArray(lb.entry) ? lb.entry : [lb.entry];
+    return entries.map(e => ({
+      name: decodeURIComponent(e.name || ''),
+      score: parseInt(e.score, 10) || 0,
+      seconds: parseInt(e.seconds, 10) || 0,
+      text: decodeURIComponent(e.text || ''),
+    }));
+  } catch (e) { console.error('leaderboard fetch failed', e); return []; }
+}
+
+async function submitScore(name, score, seconds, text) {
+  if (!DREAMLO_PRIVATE_CODE) return;
+  const safe = s => encodeURIComponent(String(s).replace(/[\/\\]/g, ''));
+  try {
+    await fetch(`${DREAMLO_BASE}/${DREAMLO_PRIVATE_CODE}/add/${safe(name)}/${score}/${seconds}/${safe(text)}`);
+  } catch (e) { console.error('score submit failed', e); }
+}
+
+async function renderLeaderboard() {
+  const list = document.getElementById('lbList');
+  const foot = document.getElementById('lbFoot');
+  if (!DREAMLO_PUBLIC_CODE) {
+    list.innerHTML = '<li class="lb-empty">leaderboard not configured</li>';
+    foot.textContent = 'set DREAMLO codes in source';
+    return;
+  }
+  list.innerHTML = '<li class="lb-empty">loading…</li>';
+  const scores = await fetchLeaderboard();
+  if (!scores || scores.length === 0) {
+    list.innerHTML = '<li class="lb-empty">no scores yet — be the first</li>';
+    foot.textContent = '';
+    return;
+  }
+  list.innerHTML = scores.map(s => `
+    <li>
+      <span class="lb-name">${escapeHtml(s.name) || 'anon'}</span>
+      <span class="lb-score">${s.score}</span>
+    </li>
+  `).join('');
+  foot.innerHTML = `<a id="lbRefresh">refresh</a>`;
+  document.getElementById('lbRefresh').addEventListener('click', renderLeaderboard);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
 const state = {
   cats: [],
   nodes: {},
@@ -408,8 +573,10 @@ const state = {
   spawnTimer: 0,
   scoreTimer: 0,
   waveTimer: 0,
+  elapsed: 0,
   running: false,
   nextId: 1,
+  playerName: 'anon',
 };
 
 function rand(n) { return Math.floor(Math.random() * n); }
@@ -626,6 +793,7 @@ function tick(dt) {
   state.spawnTimer += dt;
   state.scoreTimer += dt;
   state.waveTimer += dt;
+  state.elapsed += dt;
 
   const spawnInterval = Math.max(3.0, 7.0 - state.wave * 0.4);
   let dirty = false;
@@ -667,18 +835,38 @@ function updateHud() {
 
 function gameOver() {
   state.running = false;
+  const finalScore = Math.floor(state.score);
+  const seconds = Math.floor(state.elapsed);
+  const summary = `wave ${state.wave}, ${state.observed} observed`;
   const overlay = document.getElementById('overlay');
   overlay.style.display = 'flex';
   overlay.innerHTML = `
     <h2>REALITY COLLAPSED</h2>
     <p>The fabric of spacetime could no longer support your cat distribution.</p>
-    <p style="font-size:32px;color:var(--accent);margin:20px 0">${Math.floor(state.score)} points</p>
+    <p style="font-size:32px;color:var(--accent);margin:20px 0">${finalScore} points</p>
     <p>${state.observed} cats observed across ${state.wave} waves.</p>
+    <p id="submitStatus" style="font-size:11px;color:var(--dim)">submitting score…</p>
     <p style="margin-top:20px"><button onclick="location.reload()">OBSERVE AGAIN</button></p>
+    <div id="leaderboard">
+      <h3>Top 10 Observers</h3>
+      <ol id="lbList"><li class="lb-empty">loading…</li></ol>
+      <div class="lb-foot" id="lbFoot"></div>
+    </div>
   `;
+  submitScore(state.playerName, finalScore, seconds, summary).then(() => {
+    const s = document.getElementById('submitStatus');
+    if (s) s.textContent = DREAMLO_PRIVATE_CODE
+      ? `score saved as "${state.playerName}"`
+      : 'leaderboard not configured — score not saved';
+    renderLeaderboard();
+  });
 }
 
 function start() {
+  const nameInput = document.getElementById('playerName');
+  const raw = (nameInput && nameInput.value || '').trim().slice(0, 16);
+  state.playerName = raw || 'anon';
+  try { localStorage.setItem('qcc_name', state.playerName); } catch (e) {}
   document.getElementById('overlay').style.display = 'none';
   state.running = true;
   spawnCat();
@@ -709,7 +897,15 @@ document.addEventListener('keydown', (e) => {
 layoutNodes();
 renderLinks();
 renderNodes();
+try {
+  const saved = localStorage.getItem('qcc_name');
+  if (saved) document.getElementById('playerName').value = saved;
+} catch (e) {}
 document.getElementById('start').addEventListener('click', start);
+document.getElementById('playerName').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') start();
+});
+renderLeaderboard();
 </script>
 </body>
 </html>
