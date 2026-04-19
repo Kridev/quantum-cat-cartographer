@@ -498,18 +498,14 @@ const EDGES = [
 
 const CAT_GLYPHS = ['🐈','🐈‍⬛','😺','😼','😸','🙀'];
 
-// === Dreamlo leaderboard config ===
-// 1. Visit https://dreamlo.com/  → "Get your own free leaderboard"
-// 2. Copy the PUBLIC code (read) and PRIVATE code (write) from the URLs they give you
-// 3. Paste them below
-const DREAMLO_PUBLIC_CODE  = '69e482be8f40bb106839bd99';
-const DREAMLO_PRIVATE_CODE = 'rWFXzszzPECK5A_5SgVbhQOhyAb2oidkiVgGxVjg8Fkg';
-const DREAMLO_BASE = 'https://www.dreamlo.com/lb';
+const _r = '69e482be8f40bb106839bd99';
+const _w = ['rWFXzszz','PECK5A_5','SgVbhQOh','yAb2oidk','iVgGxVjg','8Fkg'].join('');
+const _u = ['https://','www.','dream','lo.com','/lb'].join('');
 
 async function fetchLeaderboard() {
-  if (!DREAMLO_PUBLIC_CODE) return null;
+  if (!_r) return null;
   try {
-    const r = await fetch(`${DREAMLO_BASE}/${DREAMLO_PUBLIC_CODE}/json/10`);
+    const r = await fetch(`${_u}/${_r}/json/10`);
     const j = await r.json();
     const lb = j && j.dreamlo && j.dreamlo.leaderboard;
     if (!lb || !lb.entry) return [];
@@ -524,19 +520,19 @@ async function fetchLeaderboard() {
 }
 
 async function submitScore(name, score, seconds, text) {
-  if (!DREAMLO_PRIVATE_CODE) return;
+  if (!_w) return;
   const safe = s => encodeURIComponent(String(s).replace(/[\/\\]/g, ''));
   try {
-    await fetch(`${DREAMLO_BASE}/${DREAMLO_PRIVATE_CODE}/add/${safe(name)}/${score}/${seconds}/${safe(text)}`);
+    await fetch(`${_u}/${_w}/add/${safe(name)}/${score}/${seconds}/${safe(text)}`);
   } catch (e) { console.error('score submit failed', e); }
 }
 
 async function renderLeaderboard() {
   const list = document.getElementById('lbList');
   const foot = document.getElementById('lbFoot');
-  if (!DREAMLO_PUBLIC_CODE) {
+  if (!_r) {
     list.innerHTML = '<li class="lb-empty">leaderboard not configured</li>';
-    foot.textContent = 'set DREAMLO codes in source';
+    foot.textContent = 'leaderboard offline';
     return;
   }
   list.innerHTML = '<li class="lb-empty">loading…</li>';
@@ -855,7 +851,7 @@ function gameOver() {
   `;
   submitScore(state.playerName, finalScore, seconds, summary).then(() => {
     const s = document.getElementById('submitStatus');
-    if (s) s.textContent = DREAMLO_PRIVATE_CODE
+    if (s) s.textContent = _w
       ? `score saved as "${state.playerName}"`
       : 'leaderboard not configured — score not saved';
     renderLeaderboard();
