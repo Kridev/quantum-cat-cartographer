@@ -511,42 +511,25 @@ const EDGES = [
 
 const CAT_GLYPHS = ['🐈','🐈‍⬛','😺','😼','😸','🙀'];
 
-const _b = '69e489f9856a6821894ce417';
-const _k = ['$2a$10$','mcWIA7Dso','0ZLBVFkhHXr9','OfHDBBCTKQJ','Os0py2U5f0','Z60gURQTjQ2'].join('');
-const _u = ['https://','api.','jsonbin','.io/v3/b'].join('');
-
-async function _fetchAll() {
-  const r = await fetch(`${_u}/${_b}/latest`, { headers: { 'X-Bin-Meta': 'false' } });
-  if (!r.ok) throw new Error('read failed');
-  const j = await r.json();
-  return (j && Array.isArray(j.scores)) ? j.scores : [];
-}
+const _api = 'https://cats-leaderboard.kristjan-koemets.workers.dev';
 
 async function fetchLeaderboard() {
-  if (!_b) return null;
   try {
-    const all = await _fetchAll();
-    return all.slice().sort((a, b) => b.score - a.score).slice(0, 10);
+    const r = await fetch(`${_api}/top`);
+    if (!r.ok) throw new Error('read failed');
+    return await r.json();
   } catch (e) { console.error('leaderboard fetch failed', e); return []; }
 }
 
-async function submitScore(name, score, seconds, text) {
-  if (!_b || !_k) return;
+async function submitScore(name, score) {
   try {
-    const all = await _fetchAll().catch(() => []);
-    all.push({
-      name: String(name).slice(0, 16),
-      score: Math.floor(score) || 0,
-      seconds: Math.floor(seconds) || 0,
-      text: String(text).slice(0, 64),
-      date: new Date().toISOString(),
-    });
-    all.sort((a, b) => b.score - a.score);
-    const trimmed = all.slice(0, 100);
-    await fetch(`${_u}/${_b}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Access-Key': _k },
-      body: JSON.stringify({ scores: trimmed }),
+    await fetch(`${_api}/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: String(name).slice(0, 20),
+        score: Math.floor(score) || 0,
+      }),
     });
   } catch (e) { console.error('score submit failed', e); }
 }
@@ -554,11 +537,6 @@ async function submitScore(name, score, seconds, text) {
 async function renderLeaderboard() {
   const list = document.getElementById('lbList');
   const foot = document.getElementById('lbFoot');
-  if (!_b) {
-    list.innerHTML = '<li class="lb-empty">leaderboard not configured</li>';
-    foot.textContent = 'leaderboard offline';
-    return;
-  }
   list.innerHTML = '<li class="lb-empty">loading…</li>';
   const scores = await fetchLeaderboard();
   if (!scores || scores.length === 0) {
@@ -881,11 +859,9 @@ function gameOver() {
       <div class="lb-foot" id="lbFoot"></div>
     </div>
   `;
-  submitScore(state.playerName, finalScore, seconds, summary).then(() => {
+  submitScore(state.playerName, finalScore).then(() => {
     const s = document.getElementById('submitStatus');
-    if (s) s.textContent = _b
-      ? `score saved as "${state.playerName}"`
-      : 'leaderboard not configured — score not saved';
+    if (s) s.textContent = `score saved as "${state.playerName}"`;
     renderLeaderboard();
   });
 }
