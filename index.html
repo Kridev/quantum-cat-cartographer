@@ -92,6 +92,22 @@
     height: 100%;
     pointer-events: none;
   }
+  svg.links line {
+    stroke: rgba(150,150,200,0.22);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+  }
+  svg.links line.active {
+    stroke: #b794f6;
+    stroke-width: 2.5;
+    stroke-dasharray: 8 6;
+    opacity: 0.9;
+    animation: flow 0.9s linear infinite;
+    filter: drop-shadow(0 0 4px rgba(183,148,246,0.6));
+  }
+  @keyframes flow {
+    to { stroke-dashoffset: -28; }
+  }
   .node {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -633,18 +649,7 @@ function paintLinks() {
   document.querySelectorAll('#links line').forEach(line => {
     const a = line.getAttribute('data-a');
     const b = line.getAttribute('data-b');
-    const active = from && (a === from || b === from);
-    if (active) {
-      line.setAttribute('stroke', '#b794f6');
-      line.setAttribute('stroke-width', '2.5');
-      line.setAttribute('stroke-dasharray', '');
-      line.setAttribute('opacity', '0.85');
-    } else {
-      line.setAttribute('stroke', 'rgba(150,150,200,0.22)');
-      line.setAttribute('stroke-width', '1.5');
-      line.setAttribute('stroke-dasharray', '4 4');
-      line.setAttribute('opacity', '1');
-    }
+    line.classList.toggle('active', !!(from && (a === from || b === from)));
   });
 }
 
