@@ -361,7 +361,6 @@
       <ul>
         <li><strong>+5</strong> for observing a Schrödinger cat</li>
         <li><strong>+10</strong> when you place a cat in its preferred reality</li>
-        <li><strong>+1/sec</strong> per cat you've placed correctly (passive)</li>
         <li>Each node has a capacity. Exceeding it drains stability (−2/sec per excess cat)</li>
         <li>Stability slowly regenerates when no node is overloaded</li>
         <li>Stability hits 0 → reality collapses → game over</li>
@@ -638,16 +637,12 @@ function tick(dt) {
 
   if (state.scoreTimer > 1.0) {
     state.scoreTimer = 0;
-    let happy = 0, overload = 0;
-    for (const cat of state.cats) {
-      if (!cat.schrod && cat.placed && cat.node === cat.want) happy++;
-    }
+    let overload = 0;
     for (const id in state.nodes) {
       const n = state.nodes[id];
       const c = catsAt(id).length;
       if (c > n.cap) overload += (c - n.cap);
     }
-    state.score += happy;
     state.stability = Math.max(0, Math.min(100, state.stability - overload * 2 + (overload === 0 ? 0.5 : 0)));
     if (state.stability <= 0) gameOver();
   }
