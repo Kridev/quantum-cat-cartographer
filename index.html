@@ -592,7 +592,7 @@ function neighborsOf(id) {
 function layoutNodes() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const cx = w / 2, cy = h / 2;
+  const cx = w / 2, cy = h / 2 + 15;
   const r = Math.min(w, h) * 0.32;
   REALITIES.forEach((r0, i) => {
     const angle = (i / REALITIES.length) * Math.PI * 2 - Math.PI / 2;
