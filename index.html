@@ -460,12 +460,12 @@
     #title .sub { font-size: 11px; }
     #footer { font-size: 11px; padding: 8px 10px; line-height: 1.55; }
     #footer kbd { padding: 0 4px; }
-    .node { width: 108px; height: 108px; }
-    .node .icon { font-size: 22px; }
-    .node .name { font-size: 9px; letter-spacing: 1px; }
+    .node { width: 118px; height: 118px; }
+    .node .icon { font-size: 26px; }
+    .node .name { font-size: 10px; letter-spacing: 1px; }
     .node .cap { font-size: 9px; margin-top: 2px; }
-    .cats { width: 92px; bottom: 6px; }
-    .cat { font-size: 14px; }
+    .cats { width: 104px; bottom: 6px; }
+    .cat { font-size: 15px; }
     #overlay { padding: 20px 14px 28px; }
     #overlay h2 { letter-spacing: 2px; }
     #overlay .panel { padding: 12px 14px; margin-bottom: 10px; }
@@ -487,10 +487,10 @@
     #hud { padding: 6px 8px; }
     .stat .val { font-size: 13px; }
     .bar { width: clamp(50px, 16vw, 180px); }
-    .node { width: 94px; height: 94px; }
-    .node .icon { font-size: 20px; }
-    .cats { width: 80px; }
-    .cat { font-size: 13px; }
+    .node { width: 102px; height: 102px; }
+    .node .icon { font-size: 22px; }
+    .cats { width: 90px; }
+    .cat { font-size: 14px; }
     #footer { font-size: 10px; padding: 6px 8px; }
   }
 
@@ -688,7 +688,7 @@ function layoutNodes() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const cx = w / 2, cy = h / 2 + 15;
-  const r = Math.min(w, h) * 0.32;
+  const r = Math.min(w, h) * (w < 720 ? 0.38 : 0.32);
   REALITIES.forEach((r0, i) => {
     const angle = (i / REALITIES.length) * Math.PI * 2 - Math.PI / 2;
     state.nodes[r0.id] = {
