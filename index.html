@@ -30,6 +30,17 @@
     height: 100vh;
     height: 100dvh;
   }
+  #game::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('art.png') center/cover no-repeat;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, #000 45%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 85%);
+  }
   #hud {
     position: absolute;
     top: 0; left: 0; right: 0;
