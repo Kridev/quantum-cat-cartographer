@@ -28,6 +28,7 @@
     position: relative;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
   }
   #hud {
     position: absolute;
@@ -178,11 +179,49 @@
     transition: transform 0.15s;
     text-shadow: 0 0 6px rgba(0,0,0,0.8);
     line-height: 1;
+    position: relative;
   }
   .cat:hover { transform: scale(1.4); }
   .cat.selected {
     animation: pulse 0.8s infinite;
     filter: drop-shadow(0 0 6px var(--accent));
+  }
+  .cat.selected::before {
+    content: 'move';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 7px);
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    animation: balloon-bob 0.9s ease-in-out infinite;
+  }
+  .cat.selected::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 3px);
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid var(--accent);
+    pointer-events: none;
+    animation: balloon-bob 0.9s ease-in-out infinite;
+  }
+  @keyframes balloon-bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-2px); }
   }
   .cat.schrod {
     opacity: 0.55;
