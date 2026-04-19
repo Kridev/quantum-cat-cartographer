@@ -543,7 +543,7 @@ function spawnCat(forceSchrod) {
   const want = pick(REALITIES).id;
   const isSchrod = forceSchrod || (Math.random() < Math.min(0.15 + state.wave * 0.05, 0.55));
   if (isSchrod) {
-    const all = REALITIES.map(r => r.id);
+    const all = REALITIES.map(r => r.id).filter(id => id !== want);
     const count = 2 + (Math.random() < 0.3 ? 1 : 0);
     const nodes = [];
     while (nodes.length < count) {
