@@ -627,7 +627,7 @@ function tick(dt) {
   state.scoreTimer += dt;
   state.waveTimer += dt;
 
-  const spawnInterval = Math.max(1.4, 4.0 - state.wave * 0.25);
+  const spawnInterval = Math.max(3.0, 7.0 - state.wave * 0.4);
   let dirty = false;
   if (state.spawnTimer > spawnInterval) {
     state.spawnTimer = 0;
@@ -647,12 +647,10 @@ function tick(dt) {
     if (state.stability <= 0) gameOver();
   }
 
-  if (state.waveTimer > 25) {
+  if (state.waveTimer > 35) {
     state.waveTimer = 0;
     state.wave++;
     floater(`WAVE ${state.wave}`, 'var(--accent)', pick(REALITIES).id);
-    for (let i = 0; i < state.wave; i++) spawnCat(Math.random() < 0.4);
-    dirty = true;
   }
 
   updateHud();
@@ -683,8 +681,8 @@ function gameOver() {
 function start() {
   document.getElementById('overlay').style.display = 'none';
   state.running = true;
-  for (let i = 0; i < 3; i++) spawnCat();
-  spawnCat(true);
+  spawnCat();
+  renderCats();
   let last = performance.now();
   function loop(now) {
     const dt = Math.min(0.1, (now - last) / 1000);
