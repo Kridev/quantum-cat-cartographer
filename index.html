@@ -785,7 +785,7 @@ function tick(dt) {
   state.waveTimer += dt;
   state.elapsed += dt;
 
-  const spawnInterval = Math.max(3.0, 7.0 - state.wave * 0.4);
+  const spawnInterval = Math.max(2.0, 5.0 - state.wave * 0.3);
   let dirty = false;
   if (state.spawnTimer > spawnInterval) {
     state.spawnTimer = 0;
