@@ -256,6 +256,7 @@
     font-size: 12px;
     background: linear-gradient(to top, rgba(10,10,20,0.85), transparent);
     z-index: 10;
+    pointer-events: none;
   }
   #footer kbd {
     background: rgba(255,255,255,0.1);
@@ -712,7 +713,7 @@ function neighborsOf(id) {
 function layoutNodes() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const cx = w / 2, cy = h / 2 + 15;
+  const cx = w / 2, cy = h / 2 + (h < 860 ? -6 : 15);
   const r = Math.min(w, h) * (w < 720 ? 0.38 : 0.32);
   REALITIES.forEach((r0, i) => {
     const angle = (i / REALITIES.length) * Math.PI * 2 - Math.PI / 2;
